@@ -1,0 +1,199 @@
+{
+  "name": "Send Broadcast Notification",
+  "description": "Sends in-app notifications to D365 users based on selected criteria",
+  "trigger": {
+    "type": "manual",
+    "kind": "PowerApps",
+    "inputs": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "notificationType": {
+            "type": "string",
+            "description": "Type of notification: everyone, queue, specific"
+          },
+          "message": {
+            "type": "string",
+            "description": "Notification message content"
+          },
+          "queueId": {
+            "type": "string",
+            "description": "Queue ID if notifying by queue"
+          },
+          "userIds": {
+            "type": "string",
+            "description": "Comma-separated user IDs for specific users"
+          }
+        },
+        "required": ["notificationType", "message"]
+      }
+    }
+  },
+  "actions": {
+    "Initialize_UsersList": {
+      "type": "InitializeVariable",
+      "inputs": {
+        "variables": [
+          {
+            "name": "UsersList",
+            "type": "array"
+          }
+        ]
+      }
+    },
+    "Switch_NotificationType": {
+      "type": "Switch",
+      "expression": "@triggerBody()['notificationType']",
+      "cases": {
+        "Everyone": {
+          "case": "everyone",
+          "actions": {
+            "List_All_Active_Users": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "systemusers",
+                  "$filter": "isdisabled eq false",
+                  "$select": "systemuserid,fullname"
+                }
+              },
+              "runAfter": {}
+            },
+            "Append_All_Users": {
+              "type": "AppendToArrayVariable",
+              "inputs": {
+                "name": "UsersList",
+                "value": "@body('List_All_Active_Users')?['value']"
+              },
+              "runAfter": {
+                "List_All_Active_Users": ["Succeeded"]
+              }
+            }
+          }
+        },
+        "Queue": {
+          "case": "queue",
+          "actions": {
+            "List_Queue_Members": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "queuememberships",
+                  "$filter": "_queueid_value eq '@{triggerBody()['queueId']}'",
+                  "$expand": "systemuserid($select=systemuserid,fullname)"
+                }
+              },
+              "runAfter": {}
+            },
+            "Append_Queue_Users": {
+              "type": "AppendToArrayVariable",
+              "inputs": {
+                "name": "UsersList",
+                "value": "@body('List_Queue_Members')?['value']"
+              },
+              "runAfter": {
+                "List_Queue_Members": ["Succeeded"]
+              }
+            }
+          }
+        },
+        "Specific": {
+          "case": "specific",
+          "actions": {
+            "Split_UserIds": {
+              "type": "Compose",
+              "inputs": "@split(triggerBody()['userIds'], ',')",
+              "runAfter": {}
+            },
+            "Apply_to_each_UserId": {
+              "type": "Foreach",
+              "foreach": "@outputs('Split_UserIds')",
+              "actions": {
+                "Get_User": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps",
+                      "operationId": "GetItem",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "systemusers",
+                      "recordId": "@item()"
+                    }
+                  }
+                },
+                "Append_Specific_User": {
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "UsersList",
+                    "value": "@body('Get_User')"
+                  },
+                  "runAfter": {
+                    "Get_User": ["Succeeded"]
+                  }
+                }
+              },
+              "runAfter": {
+                "Split_UserIds": ["Succeeded"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "Apply_to_each_User": {
+      "type": "Foreach",
+      "foreach": "@variables('UsersList')",
+      "actions": {
+        "Send_In-App_Notification": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "CreateRecord",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "appnotifications",
+              "item": {
+                "title": "Broadcast Notification",
+                "body": "@triggerBody()['message']",
+                "ownerid@odata.bind": "/systemusers(@{if(empty(item()?['systemuserid']), item()?['systemuserid_x002e_systemuserid'], item()?['systemuserid'])})",
+                "icontype": 100000000,
+                "priority": 200000000
+              }
+            }
+          }
+        }
+      },
+      "runAfter": {
+        "Switch_NotificationType": ["Succeeded"]
+      }
+    },
+    "Response": {
+      "type": "Response",
+      "inputs": {
+        "statusCode": 200,
+        "body": {
+          "success": true,
+          "message": "Notifications sent successfully",
+          "userCount": "@length(variables('UsersList'))"
+        }
+      },
+      "runAfter": {
+        "Apply_to_each_User": ["Succeeded"]
+      }
+    }
+  }
+}

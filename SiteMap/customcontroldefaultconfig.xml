@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SiteMap IntroducedVersion="9.2.24021.213">
+  <Area Id="new_BroadcastNotificationsArea" ResourceId="Area.new_BroadcastNotificationsArea.Title" Icon="/_imgs/area/default_icon.png" DescriptionResourceId="Area.new_BroadcastNotificationsArea.Description" ShowGroups="true" IntroducedVersion="1.0.0.0">
+    <Group Id="new_BroadcastNotificationsGroup" ResourceId="Group.new_BroadcastNotificationsGroup.Title" DescriptionResourceId="Group.new_BroadcastNotificationsGroup.Description" IntroducedVersion="1.0.0.0" IsProfile="false">
+      <SubArea Id="new_BroadcastNotificationsSubArea" ResourceId="SubArea.new_BroadcastNotificationsSubArea.Title" Icon="/_imgs/ribbon/Announcements_16.png" DescriptionResourceId="SubArea.new_BroadcastNotificationsSubArea.Description" IntroducedVersion="1.0.0.0" Url="/main.aspx?pagetype=control&amp;controlName=new_BroadcastNotificationApp" PassParams="0">
+        <Privilege Entity="appnotification" Privilege="Create" />
+      </SubArea>
+    </Group>
+  </Area>
+</SiteMap>

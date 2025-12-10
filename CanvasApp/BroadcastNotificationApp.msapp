@@ -1,0 +1,81 @@
+{
+  "NOTE": "This is a placeholder file. The actual Canvas App must be created in Power Apps Studio.",
+  "AppName": "Broadcast Notification App",
+  "Description": "UI for sending broadcast notifications to D365 users",
+  "RequiredConnections": [
+    "Dataverse",
+    "Power Automate (SendBroadcastNotification flow)"
+  ],
+  "ScreenLayout": {
+    "MainScreen": {
+      "Title": "Send Broadcast Notification",
+      "Controls": [
+        {
+          "Type": "Dropdown",
+          "Name": "drpNotificationType",
+          "Label": "Notification Type",
+          "Items": ["Everyone", "Specific Queue", "Specific Users"],
+          "DefaultValue": "Everyone"
+        },
+        {
+          "Type": "ComboBox",
+          "Name": "cmbQueue",
+          "Label": "Select Queue",
+          "Items": "Filter(Queues, statecode = 0)",
+          "DisplayField": "name",
+          "Visible": "drpNotificationType.Selected.Value = \"Specific Queue\""
+        },
+        {
+          "Type": "ComboBox",
+          "Name": "cmbUsers",
+          "Label": "Select Users",
+          "Items": "Filter(Users, isdisabled = false)",
+          "DisplayField": "fullname",
+          "SelectMultiple": true,
+          "Visible": "drpNotificationType.Selected.Value = \"Specific Users\""
+        },
+        {
+          "Type": "TextInput",
+          "Name": "txtMessage",
+          "Label": "Message",
+          "Mode": "MultiLine",
+          "HintText": "Enter your broadcast message here...",
+          "MaxLength": 500
+        },
+        {
+          "Type": "Label",
+          "Name": "lblCharCount",
+          "Text": "Len(txtMessage.Text) & \" / 500 characters\""
+        },
+        {
+          "Type": "Button",
+          "Name": "btnSend",
+          "Text": "Send Notification",
+          "OnSelect": "SendNotificationFlow"
+        },
+        {
+          "Type": "Button",
+          "Name": "btnClear",
+          "Text": "Clear",
+          "OnSelect": "Reset(txtMessage); Reset(drpNotificationType); Reset(cmbQueue); Reset(cmbUsers)"
+        }
+      ]
+    }
+  },
+  "DataSources": {
+    "Queues": {
+      "Type": "Dataverse",
+      "Entity": "queues",
+      "Fields": ["queueid", "name"]
+    },
+    "Users": {
+      "Type": "Dataverse",
+      "Entity": "systemusers",
+      "Fields": ["systemuserid", "fullname", "isdisabled"]
+    }
+  },
+  "PowerAutomateFlow": {
+    "Name": "SendBroadcastNotification",
+    "OnSelect_Formula": "If(IsBlank(txtMessage.Text), Notify(\"Please enter a message\", NotificationType.Error), Set(varResponse, SendBroadcastNotification.Run(If(drpNotificationType.Selected.Value = \"Everyone\", \"everyone\", If(drpNotificationType.Selected.Value = \"Specific Queue\", \"queue\", \"specific\")), txtMessage.Text, If(drpNotificationType.Selected.Value = \"Specific Queue\", cmbQueue.Selected.queueid, \"\"), If(drpNotificationType.Selected.Value = \"Specific Users\", Concat(cmbUsers.SelectedItems, systemuserid, \",\"), \"\"))); If(varResponse.success, Notify(\"Notification sent to \" & varResponse.userCount & \" user(s)\", NotificationType.Success); Reset(txtMessage); Reset(drpNotificationType); Reset(cmbQueue); Reset(cmbUsers), Notify(\"Failed to send notifications\", NotificationType.Error)))"
+  }
+}

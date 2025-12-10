@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml version="9.2.24021.213" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SolutionManifest>
+    <UniqueName>BroadcastNotification</UniqueName>
+    <LocalizedNames>
+      <LocalizedName description="Broadcast Notification System" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="Enables Customer Service Supervisors to send broadcast notifications to D365 users" languagecode="1033" />
+    </Descriptions>
+    <Version>1.0.0.0</Version>
+    <Managed>2</Managed>
+    <Publisher>
+      <UniqueName>customerpublisher</UniqueName>
+      <LocalizedNames>
+        <LocalizedName description="Custom Publisher" languagecode="1033" />
+      </LocalizedNames>
+      <Descriptions>
+        <Description description="Custom solutions publisher" languagecode="1033" />
+      </Descriptions>
+      <EMailAddress>admin@mauriciomaster.onmicrosoft.com</EMailAddress>
+      <SupportingWebsiteUrl>https://mauriciomaster.crm.dynamics.com</SupportingWebsiteUrl>
+      <CustomizationPrefix>new</CustomizationPrefix>
+      <CustomizationOptionValuePrefix>10000</CustomizationOptionValuePrefix>
+      <Addresses>
+        <Address>
+          <AddressNumber>1</AddressNumber>
+          <AddressTypeCode>1</AddressTypeCode>
+          <City />
+          <County />
+          <Country />
+          <Fax />
+          <FreightTermsCode />
+          <ImportSequenceNumber />
+          <Latitude />
+          <Line1 />
+          <Line2 />
+          <Line3 />
+          <Longitude />
+          <Name />
+          <PostalCode />
+          <PostOfficeBox />
+          <PrimaryContactName />
+          <ShippingMethodCode>1</ShippingMethodCode>
+          <StateOrProvince />
+          <Telephone1 />
+          <Telephone2 />
+          <Telephone3 />
+          <TimeZoneRuleVersionNumber />
+          <UPSZone />
+          <UTCOffset />
+          <UTCConversionTimeZoneCode />
+        </Address>
+        <Address>
+          <AddressNumber>2</AddressNumber>
+          <AddressTypeCode>1</AddressTypeCode>
+          <City />
+          <County />
+          <Country />
+          <Fax />
+          <FreightTermsCode />
+          <ImportSequenceNumber />
+          <Latitude />
+          <Line1 />
+          <Line2 />
+          <Line3 />
+          <Longitude />
+          <Name />
+          <PostalCode />
+          <PostOfficeBox />
+          <PrimaryContactName />
+          <ShippingMethodCode>1</ShippingMethodCode>
+          <StateOrProvince />
+          <Telephone1 />
+          <Telephone2 />
+          <Telephone3 />
+          <TimeZoneRuleVersionNumber />
+          <UPSZone />
+          <UTCOffset />
+          <UTCConversionTimeZoneCode />
+        </Address>
+      </Addresses>
+    </Publisher>
+    <RootComponents>
+      <RootComponent type="62" schemaName="new_BroadcastNotificationApp" behavior="0" />
+      <RootComponent type="29" schemaName="new_BroadcastNotifications" behavior="0" />
+    </RootComponents>
+    <MissingDependencies />
+  </SolutionManifest>
+</ImportExportXml>

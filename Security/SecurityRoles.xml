@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RolePrivileges xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <RolePrivilege name="Customer Service Supervisor - Broadcast Notifications">
+    <Privileges>
+      <!-- App Notification Privileges -->
+      <Privilege name="prvCreateAppNotification" level="Global">
+        <PrivilegeId>{GUID}</PrivilegeId>
+      </Privilege>
+      <Privilege name="prvReadAppNotification" level="Global">
+        <PrivilegeId>{GUID}</PrivilegeId>
+      </Privilege>
+      <Privilege name="prvWriteAppNotification" level="Global">
+        <PrivilegeId>{GUID}</PrivilegeId>
+      </Privilege>
+      
+      <!-- System User Privileges (Read Only) -->
+      <Privilege name="prvReadUser" level="Global">
+        <PrivilegeId>{GUID}</PrivilegeId>
+      </Privilege>
+      
+      <!-- Queue Privileges (Read Only) -->
+      <Privilege name="prvReadQueue" level="Global">
+        <PrivilegeId>{GUID}</PrivilegeId>
+      </Privilege>
+      
+      <!-- Queue Membership Privileges (Read Only) -->
+      <Privilege name="prvReadQueueMembership" level="Global">
+        <PrivilegeId>{GUID}</PrivilegeId>
+      </Privilege>
+    </Privileges>
+  </RolePrivilege>
+</RolePrivileges>

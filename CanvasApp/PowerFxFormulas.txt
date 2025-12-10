@@ -1,0 +1,268 @@
+// PowerFx Formulas for Broadcast Notification Canvas App
+
+// ========================================
+// App OnStart
+// ========================================
+// Initialize variables
+Set(varNotificationSent, false);
+Set(varIsLoading, false);
+
+// ========================================
+// drpNotificationType - Dropdown
+// ========================================
+// Items property:
+["Everyone", "Specific Queue", "Specific Users"]
+
+// Default property:
+"Everyone"
+
+// OnChange property:
+Reset(cmbQueue);
+Reset(cmbUsers);
+
+// ========================================
+// cmbQueue - ComboBox (Queue Selector)
+// ========================================
+// Items property:
+SortByColumns(
+    Filter(Queues, StateCode = 0),
+    "Name",
+    SortOrder.Ascending
+)
+
+// DisplayFields property:
+["Name"]
+
+// Visible property:
+drpNotificationType.Selected.Value = "Specific Queue"
+
+// ========================================
+// cmbUsers - ComboBox (User Selector)
+// ========================================
+// Items property:
+SortByColumns(
+    Filter(Users, 'Is Disabled' = false),
+    "Full Name",
+    SortOrder.Ascending
+)
+
+// DisplayFields property:
+["Full Name"]
+
+// SelectMultiple property:
+true
+
+// Visible property:
+drpNotificationType.Selected.Value = "Specific Users"
+
+// ========================================
+// txtMessage - Text Input (Multiline)
+// ========================================
+// HintText property:
+"Enter your broadcast message here..."
+
+// MaxLength property:
+500
+
+// Mode property:
+TextMode.MultiLine
+
+// ========================================
+// lblCharCount - Label (Character Counter)
+// ========================================
+// Text property:
+Len(txtMessage.Text) & " / 500 characters"
+
+// Color property:
+If(Len(txtMessage.Text) > 450, Color.Red, 
+   If(Len(txtMessage.Text) > 400, Color.Orange, 
+   Color.Gray))
+
+// ========================================
+// btnSend - Button (Send Notification)
+// ========================================
+// DisplayMode property:
+If(
+    IsBlank(txtMessage.Text) || 
+    varIsLoading ||
+    (drpNotificationType.Selected.Value = "Specific Queue" && IsBlank(cmbQueue.Selected.QueueId)) ||
+    (drpNotificationType.Selected.Value = "Specific Users" && CountRows(cmbUsers.SelectedItems) = 0),
+    DisplayMode.Disabled,
+    DisplayMode.Edit
+)
+
+// OnSelect property:
+// Set loading state
+Set(varIsLoading, true);
+
+// Validate message
+If(
+    IsBlank(txtMessage.Text),
+    Notify("Please enter a message", NotificationType.Error);
+    Set(varIsLoading, false),
+    
+    // Determine notification type
+    Set(varNotifType, 
+        Switch(
+            drpNotificationType.Selected.Value,
+            "Everyone", "everyone",
+            "Specific Queue", "queue",
+            "Specific Users", "specific",
+            "everyone"
+        )
+    );
+    
+    // Get queue ID if queue is selected
+    Set(varQueueId, 
+        If(
+            drpNotificationType.Selected.Value = "Specific Queue" && !IsBlank(cmbQueue.Selected.QueueId), 
+            Text(cmbQueue.Selected.QueueId), 
+            ""
+        )
+    );
+    
+    // Get user IDs if specific users are selected
+    Set(varUserIds,
+        If(
+            drpNotificationType.Selected.Value = "Specific Users" && CountRows(cmbUsers.SelectedItems) > 0,
+            Concat(cmbUsers.SelectedItems, 'System User', ","),
+            ""
+        )
+    );
+    
+    // Validate selections
+    If(
+        varNotifType = "queue" && IsBlank(varQueueId),
+        Notify("Please select a queue", NotificationType.Error);
+        Set(varIsLoading, false),
+        
+        varNotifType = "specific" && IsBlank(varUserIds),
+        Notify("Please select at least one user", NotificationType.Error);
+        Set(varIsLoading, false),
+        
+        // All validations passed, call the flow
+        Set(varResponse, 
+            'SendBroadcastNotification'.Run(
+                varNotifType,
+                txtMessage.Text,
+                varQueueId,
+                varUserIds
+            )
+        );
+        
+        // Process response
+        If(
+            varResponse.success,
+            // Success
+            Notify(
+                "✓ Notification sent successfully to " & Text(varResponse.userCount) & " user(s)", 
+                NotificationType.Success,
+                5000
+            );
+            Set(varNotificationSent, true);
+            // Reset form
+            Reset(txtMessage); 
+            Reset(drpNotificationType); 
+            Reset(cmbQueue); 
+            Reset(cmbUsers);
+            Set(varIsLoading, false),
+            
+            // Error
+            Notify("✗ Failed to send notifications. Please try again.", NotificationType.Error);
+            Set(varIsLoading, false)
+        )
+    )
+);
+
+// ========================================
+// btnClear - Button (Clear Form)
+// ========================================
+// DisplayMode property:
+If(varIsLoading, DisplayMode.Disabled, DisplayMode.Edit)
+
+// OnSelect property:
+Reset(txtMessage); 
+Reset(drpNotificationType); 
+Reset(cmbQueue); 
+Reset(cmbUsers);
+Set(varNotificationSent, false);
+Notify("Form cleared", NotificationType.Information, 2000);
+
+// ========================================
+// lblStatus - Label (Status Message)
+// ========================================
+// Visible property:
+varIsLoading
+
+// Text property:
+"Sending notifications, please wait..."
+
+// ========================================
+// imgLoading - Image/Icon (Loading Spinner)
+// ========================================
+// Visible property:
+varIsLoading
+
+// ========================================
+// Validation Messages
+// ========================================
+
+// lblQueueValidation - Validation message for queue
+// Visible property:
+drpNotificationType.Selected.Value = "Specific Queue" && 
+IsBlank(cmbQueue.Selected.QueueId) && 
+!IsBlank(txtMessage.Text)
+
+// Text property:
+"⚠ Please select a queue"
+
+// Color property:
+Color.Red
+
+// lblUsersValidation - Validation message for users
+// Visible property:
+drpNotificationType.Selected.Value = "Specific Users" && 
+CountRows(cmbUsers.SelectedItems) = 0 && 
+!IsBlank(txtMessage.Text)
+
+// Text property:
+"⚠ Please select at least one user"
+
+// Color property:
+Color.Red
+
+// lblMessageValidation - Validation message for message
+// Visible property:
+IsBlank(txtMessage.Text) && 
+(drpNotificationType.Selected.Value = "Specific Queue" && !IsBlank(cmbQueue.Selected.QueueId) ||
+ drpNotificationType.Selected.Value = "Specific Users" && CountRows(cmbUsers.SelectedItems) > 0 ||
+ drpNotificationType.Selected.Value = "Everyone")
+
+// Text property:
+"⚠ Please enter a message"
+
+// Color property:
+Color.Red
+
+// ========================================
+// Helper Functions
+// ========================================
+
+// Function to format user count
+// Usage: In notifications or status labels
+If(
+    varResponse.userCount = 1,
+    "1 user",
+    Text(varResponse.userCount) & " users"
+)
+
+// Function to get selected users count
+CountRows(cmbUsers.SelectedItems)
+
+// Function to check if form is valid
+!IsBlank(txtMessage.Text) &&
+(
+    drpNotificationType.Selected.Value = "Everyone" ||
+    (drpNotificationType.Selected.Value = "Specific Queue" && !IsBlank(cmbQueue.Selected.QueueId)) ||
+    (drpNotificationType.Selected.Value = "Specific Users" && CountRows(cmbUsers.SelectedItems) > 0)
+)

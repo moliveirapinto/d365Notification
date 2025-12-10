@@ -1,0 +1,107 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.event.inputs.version }}
+        release_name: Broadcast Notification System v${{ github.event.inputs.version }}
+        body: |
+          # Broadcast Notification System v${{ github.event.inputs.version }}
+          
+          Send broadcast notifications to Dynamics 365 users directly from Customer Service Workspace.
+          
+          ## 🎯 Features
+          
+          - ✅ Notify all active users
+          - ✅ Notify users in a specific queue
+          - ✅ Notify specific selected users
+          - ✅ Simple text input with character limit
+          - ✅ Real-time D365 in-app notifications
+          
+          ## 📥 Installation
+          
+          ### Quick Install (10 minutes)
+          
+          **IMPORTANT**: Due to GitHub Actions limitations, the solution ZIP must be manually uploaded.
+          
+          To upload the solution file:
+          1. Deploy the solution to your environment using the deployment scripts
+          2. Export the solution as managed using: `.\DeploymentPackage\Export-Solution.ps1`
+          3. Upload the ZIP file to this release by editing it and dragging the file
+          
+          Once uploaded:
+          1. Download `BroadcastNotification_${{ github.event.inputs.version }}_Managed.zip`
+          2. Go to https://make.powerapps.com
+          3. Select your environment
+          4. Navigate to **Solutions** > **Import solution**
+          5. Upload the ZIP file
+          6. Follow the import wizard
+          7. Configure connections when prompted
+          
+          ### Documentation
+          
+          - [Complete Installation Guide](https://github.com/${{ github.repository }}/blob/main/COMPLETE_GUIDE.md)
+          - [Quick Start Guide](https://github.com/${{ github.repository }}/blob/main/QUICKSTART.md)
+          - [Security Configuration](https://github.com/${{ github.repository }}/blob/main/Security/SecurityGuide.md)
+          
+          ## 📋 Requirements
+          
+          - Dynamics 365 Customer Service environment
+          - System Administrator access (for installation)
+          - Power Apps and Power Automate licenses (included with D365)
+          
+          ## 🔐 Post-Installation
+          
+          After import, configure security roles:
+          - Grant **Create** privilege on **App Notification** to Customer Service Supervisor role
+          - See: [Security/SecurityGuide.md](https://github.com/${{ github.repository }}/blob/main/Security/SecurityGuide.md)
+          
+          ## 🆘 Support
+          
+          - [Troubleshooting Guide](https://github.com/${{ github.repository }}/blob/main/COMPLETE_GUIDE.md#troubleshooting)
+          - [GitHub Issues](https://github.com/${{ github.repository }}/issues)
+          
+          ## 📜 Version History
+          
+          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          
+          ---
+          
+          **Installation Time**: ~10 minutes  
+          **Skill Level**: Basic Power Platform knowledge
+        draft: false
+        prerelease: ${{ github.event.inputs.prerelease }}
+    
+    - name: Release Info
+      run: |
+        echo "✅ Release created: ${{ steps.create_release.outputs.html_url }}"
+        echo ""
+        echo "⚠️  NEXT STEPS:"
+        echo "1. Deploy solution to your environment"
+        echo "2. Run: .\DeploymentPackage\Export-Solution.ps1 -Managed"
+        echo "3. Upload the ZIP to the release: ${{ steps.create_release.outputs.html_url }}"
+        echo "4. Edit release notes if needed"

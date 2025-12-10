@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Entity Name="SiteMap">
+  <FormXml>
+    <SiteMap>
+      <!-- Add this to your Customer Service Workspace SiteMap -->
+      <Area Id="CustomerServiceWorkspace" Icon="/_imgs/ribbon/Service_24x.png">
+        <Group Id="BroadcastNotificationsGroup" Title="Communications" ResourceId="Group_Communications">
+          <SubArea Id="BroadcastNotifications" 
+                   Title="Broadcast Notifications" 
+                   Icon="/_imgs/area/Announcements_16.png"
+                   Url="/main.aspx?appid=YOUR_CANVAS_APP_ID_HERE"
+                   Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web"
+                   AvailableOffline="false"
+                   PassParams="false"
+                   Sku="All,OnPremise,Live,SPLA">
+            <Privilege Entity="appnotification" Privilege="Create" />
+            <Privilege Entity="systemuser" Privilege="Read" />
+          </SubArea>
+        </Group>
+      </Area>
+    </SiteMap>
+  </FormXml>
+</Entity>

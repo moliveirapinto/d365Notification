@@ -1,0 +1,367 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "$connections": {
+      "defaultValue": {},
+      "type": "Object"
+    }
+  },
+  "triggers": {
+    "manual": {
+      "type": "Request",
+      "kind": "PowerApp",
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "notificationType": {
+              "type": "string",
+              "description": "everyone, queue, or specific",
+              "title": "Notification Type"
+            },
+            "message": {
+              "type": "string",
+              "description": "The notification message content",
+              "title": "Message"
+            },
+            "queueId": {
+              "type": "string",
+              "description": "Queue GUID (optional)",
+              "title": "Queue ID"
+            },
+            "userIds": {
+              "type": "string",
+              "description": "Comma-separated user GUIDs (optional)",
+              "title": "User IDs"
+            }
+          },
+          "required": [
+            "notificationType",
+            "message"
+          ]
+        }
+      }
+    }
+  },
+  "actions": {
+    "Initialize_UsersList": {
+      "type": "InitializeVariable",
+      "inputs": {
+        "variables": [
+          {
+            "name": "UsersList",
+            "type": "array",
+            "value": []
+          }
+        ]
+      },
+      "runAfter": {}
+    },
+    "Switch_on_NotificationType": {
+      "type": "Switch",
+      "expression": "@triggerBody()['notificationType']",
+      "cases": {
+        "Everyone": {
+          "case": "everyone",
+          "actions": {
+            "List_All_Active_Users": {
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['commondataserviceforapps']['connectionId']"
+                  }
+                },
+                "method": "get",
+                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('default.cds'))}/tables/@{encodeURIComponent(encodeURIComponent('systemusers'))}/items",
+                "queries": {
+                  "$filter": "isdisabled eq false and accessmode eq 0",
+                  "$select": "systemuserid,fullname"
+                }
+              },
+              "runAfter": {}
+            },
+            "For_each_Active_User": {
+              "type": "Foreach",
+              "foreach": "@outputs('List_All_Active_Users')?['body/value']",
+              "actions": {
+                "Append_User_to_List": {
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "UsersList",
+                    "value": {
+                      "systemuserid": "@items('For_each_Active_User')?['systemuserid']",
+                      "fullname": "@items('For_each_Active_User')?['fullname']"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "List_All_Active_Users": [
+                  "Succeeded"
+                ]
+              }
+            }
+          }
+        },
+        "Queue": {
+          "case": "queue",
+          "actions": {
+            "List_Queue_Members": {
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['commondataserviceforapps']['connectionId']"
+                  }
+                },
+                "method": "get",
+                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('default.cds'))}/tables/@{encodeURIComponent(encodeURIComponent('queuememberships'))}/items",
+                "queries": {
+                  "$filter": "_queueid_value eq '@{triggerBody()['queueId']}'",
+                  "$select": "_systemuserid_value"
+                }
+              },
+              "runAfter": {}
+            },
+            "For_each_Queue_Member": {
+              "type": "Foreach",
+              "foreach": "@outputs('List_Queue_Members')?['body/value']",
+              "actions": {
+                "Get_Queue_Member_Details": {
+                  "type": "ApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connection": {
+                        "name": "@parameters('$connections')['commondataserviceforapps']['connectionId']"
+                      }
+                    },
+                    "method": "get",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('default.cds'))}/tables/@{encodeURIComponent(encodeURIComponent('systemusers'))}/items/@{encodeURIComponent(items('For_each_Queue_Member')?['_systemuserid_value'])}",
+                    "queries": {
+                      "$select": "systemuserid,fullname,isdisabled"
+                    }
+                  }
+                },
+                "Condition_User_Active": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@outputs('Get_Queue_Member_Details')?['body/isdisabled']",
+                          false
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Append_Queue_User_to_List": {
+                      "type": "AppendToArrayVariable",
+                      "inputs": {
+                        "name": "UsersList",
+                        "value": {
+                          "systemuserid": "@outputs('Get_Queue_Member_Details')?['body/systemuserid']",
+                          "fullname": "@outputs('Get_Queue_Member_Details')?['body/fullname']"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Get_Queue_Member_Details": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "List_Queue_Members": [
+                  "Succeeded"
+                ]
+              }
+            }
+          }
+        },
+        "Specific": {
+          "case": "specific",
+          "actions": {
+            "Split_User_IDs": {
+              "type": "Compose",
+              "inputs": "@split(triggerBody()['userIds'], ',')",
+              "runAfter": {}
+            },
+            "For_each_Specific_User": {
+              "type": "Foreach",
+              "foreach": "@outputs('Split_User_IDs')",
+              "actions": {
+                "Get_Specific_User": {
+                  "type": "ApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connection": {
+                        "name": "@parameters('$connections')['commondataserviceforapps']['connectionId']"
+                      }
+                    },
+                    "method": "get",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('default.cds'))}/tables/@{encodeURIComponent(encodeURIComponent('systemusers'))}/items/@{encodeURIComponent(trim(items('For_each_Specific_User')))}",
+                    "queries": {
+                      "$select": "systemuserid,fullname,isdisabled"
+                    }
+                  }
+                },
+                "Condition_Specific_User_Active": {
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@outputs('Get_Specific_User')?['body/isdisabled']",
+                          false
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Append_Specific_User_to_List": {
+                      "type": "AppendToArrayVariable",
+                      "inputs": {
+                        "name": "UsersList",
+                        "value": {
+                          "systemuserid": "@outputs('Get_Specific_User')?['body/systemuserid']",
+                          "fullname": "@outputs('Get_Specific_User')?['body/fullname']"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Get_Specific_User": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Split_User_IDs": [
+                  "Succeeded"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "default": {
+        "actions": {}
+      },
+      "runAfter": {
+        "Initialize_UsersList": [
+          "Succeeded"
+        ]
+      }
+    },
+    "Initialize_SuccessCount": {
+      "type": "InitializeVariable",
+      "inputs": {
+        "variables": [
+          {
+            "name": "SuccessCount",
+            "type": "integer",
+            "value": 0
+          }
+        ]
+      },
+      "runAfter": {
+        "Switch_on_NotificationType": [
+          "Succeeded"
+        ]
+      }
+    },
+    "For_each_User_Send_Notification": {
+      "type": "Foreach",
+      "foreach": "@variables('UsersList')",
+      "actions": {
+        "Create_App_Notification": {
+          "type": "ApiConnection",
+          "inputs": {
+            "host": {
+              "connection": {
+                "name": "@parameters('$connections')['commondataserviceforapps']['connectionId']"
+              }
+            },
+            "method": "post",
+            "body": {
+              "title": "Broadcast Notification",
+              "body": "@triggerBody()['message']",
+              "ownerid@odata.bind": "/systemusers(@{items('For_each_User_Send_Notification')?['systemuserid']})",
+              "icontype": 100000000,
+              "priority": 200000000
+            },
+            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('default.cds'))}/tables/@{encodeURIComponent(encodeURIComponent('appnotifications'))}/items"
+          },
+          "runAfter": {}
+        },
+        "Increment_Success_Counter": {
+          "type": "IncrementVariable",
+          "inputs": {
+            "name": "SuccessCount",
+            "value": 1
+          },
+          "runAfter": {
+            "Create_App_Notification": [
+              "Succeeded"
+            ]
+          }
+        }
+      },
+      "runAfter": {
+        "Initialize_SuccessCount": [
+          "Succeeded"
+        ]
+      },
+      "runtimeConfiguration": {
+        "concurrency": {
+          "repetitions": 5
+        }
+      }
+    },
+    "Respond_to_PowerApp": {
+      "type": "Response",
+      "kind": "PowerApp",
+      "inputs": {
+        "statusCode": 200,
+        "body": {
+          "success": true,
+          "message": "Notifications sent successfully",
+          "userCount": "@variables('SuccessCount')",
+          "totalUsers": "@length(variables('UsersList'))"
+        },
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            },
+            "userCount": {
+              "type": "integer"
+            },
+            "totalUsers": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "runAfter": {
+        "For_each_User_Send_Notification": [
+          "Succeeded",
+          "Failed",
+          "Skipped",
+          "TimedOut"
+        ]
+      }
+    }
+  },
+  "outputs": {}
+}
