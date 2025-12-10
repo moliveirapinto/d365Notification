@@ -209,7 +209,7 @@ if (-not $SkipCanvasApp) {
         Write-Info "  - CanvasApp/PowerFxFormulas.txt"
     }
 } else {
-    Write-Info "Canvas App creation skipped (SkipCanvasApp flag)"
+    Write-Info "Canvas App creation skipped - use SkipCanvasApp flag"
 }
 
 # Step 7: Update Sitemap
