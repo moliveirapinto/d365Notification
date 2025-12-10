@@ -54,10 +54,10 @@ function Write-ColorOutput($ForegroundColor, $Message) {
     $host.UI.RawUI.ForegroundColor = $fc
 }
 
-function Write-Success($Message) { Write-ColorOutput Green "✓ $Message" }
-function Write-Info($Message) { Write-ColorOutput Cyan "ℹ $Message" }
-function Write-Warning($Message) { Write-ColorOutput Yellow "⚠ $Message" }
-function Write-Error2($Message) { Write-ColorOutput Red "✗ $Message" }
+function Write-Success($Message) { Write-Host "[SUCCESS] $Message" -ForegroundColor Green }
+function Write-Info($Message) { Write-Host "[INFO] $Message" -ForegroundColor Cyan }
+function Write-Warning($Message) { Write-Host "[WARNING] $Message" -ForegroundColor Yellow }
+function Write-Error2($Message) { Write-Host "[ERROR] $Message" -ForegroundColor Red }
 
 # Banner
 Write-Host ""
@@ -73,11 +73,15 @@ Write-Host ""
 
 # Check PowerShell version
 $psVersion = $PSVersionTable.PSVersion
-if ($psVersion.Major -lt 5) {
-    Write-Error2 "PowerShell 5.1 or higher is required. Current version: $($psVersion.ToString())"
+if ($null -eq $psVersion) {
+    Write-Error2 "Unable to determine PowerShell version"
     exit 1
 }
-Write-Success "PowerShell version: $($psVersion.ToString())"
+if ($psVersion.Major -lt 5) {
+    Write-Error2 "PowerShell 5.1 or higher is required. Current version: $psVersion"
+    exit 1
+}
+Write-Success "PowerShell version: $psVersion"
 
 # Check if running as administrator
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -168,7 +172,7 @@ if (-not $SkipCanvasApp) {
     Write-Info "This will take approximately 5 minutes"
     Write-Host ""
     
-    $continue = Read-Host "Continue with Canvas App setup? (Y/N)"
+    $continue = Read-Host "Continue with Canvas App setup? [Y/N]"
     if ($continue -eq 'Y' -or $continue -eq 'y') {
         # Open Power Apps
         $powerAppsUrl = "https://make.powerapps.com/environments/"
