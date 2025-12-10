@@ -192,7 +192,7 @@ if (-not $SkipCanvasApp) {
         Write-Host "6. Copy formulas from:" -ForegroundColor White
         Write-Host "   CanvasApp/PowerFxFormulas.txt" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "7. When done, click 'File' > 'Save' > 'Publish'" -ForegroundColor White
+        Write-Host "7. When done, click 'File' then 'Save' then 'Publish'" -ForegroundColor White
         Write-Host ""
         Write-Host "========================================" -ForegroundColor Yellow
         Write-Host ""
@@ -205,12 +205,12 @@ if (-not $SkipCanvasApp) {
         Write-Info "  - CanvasApp/PowerFxFormulas.txt"
     }
 } else {
-    Write-Info "Canvas App creation skipped (--SkipCanvasApp flag)"
+    Write-Info "Canvas App creation skipped (SkipCanvasApp flag)"
 }
 
 # Step 7: Update Sitemap
 Write-Host ""
-Write-Info "Updating Customer Service Workspace sitemap..."
+Write-Host "Updating Customer Service Workspace sitemap..." -ForegroundColor Cyan
 Write-Host ""
 
 Write-Warning "Sitemap update requires Canvas App URL"
